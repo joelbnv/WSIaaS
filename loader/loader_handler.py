@@ -6,32 +6,33 @@ from database.db_factory import DatabaseFactory
 
 
 class LoaderHandler:
-    def __init__(self, vendor: str, data, destination_format: str, db_type: str, db_config: dict) -> None:
+    def __init__(self, vendor: str, data, destination_format: str, db_type: str = None, db_config: dict = None) -> None:
         self.vendor = vendor
         self.data = data
         self.destination_format = destination_format
         self.db_type = db_type.lower() if db_type else None
         self.db_config = json.loads(db_config) if isinstance(db_config, str) else db_config
-        os.makedirs("loading_results", exist_ok=True)
+        os.makedirs("result_files/loading_results", exist_ok=True)
 
     def save_to_json(self, data: dict | pd.DataFrame) -> None:
         if isinstance(data, pd.DataFrame):
             data.to_json(
-                "loading_results/final_results.json", orient="records", indent=4
+                "result_files/loading_results/final_results.json", orient="records", indent=4
             )
 
     def save_to_csv(self, data: dict | pd.DataFrame) -> None:
         if isinstance(data, pd.DataFrame):
             data.to_csv(
-                "loading_results/final_results.csv",
+                "result_files/loading_results/final_results.csv",
                 sep=";",
                 encoding="utf-8",
                 quoting=csv.QUOTE_ALL,
+                index=False
             )
 
     def save_to_excel(self, data: dict | pd.DataFrame) -> None:
         if isinstance(data, pd.DataFrame):
-            data.to_excel("loading_results/final_results.xlsx", sheet_name="Data")
+            data.to_excel("result_files/loading_results/final_results.xlsx", sheet_name="Data")
 
 
 

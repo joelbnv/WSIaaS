@@ -44,9 +44,9 @@ class ExtractionHandler:
         """Dumps (for now, Shopify API Data) into a JSON file"""
 
         if self.vendor == "shopify" and used_strategy_name == "ShopifyAPIStrategy":
-            with open("extraction_results/result.json", "w") as file: 
+            with open("result_files/extraction_results/result.json", "w") as file: 
                 json.dump(raw_data, file, indent=4)
 
         if self.vendor == "shopify" and used_strategy_name == "SitemapSingleProductStrategy":
-            with open("extraction_results/result.json", "w") as file: 
+            with open("result_files/extraction_results/result.json", "w") as file: 
                 json.dump(raw_data, file, indent=4)

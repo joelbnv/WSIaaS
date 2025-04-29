@@ -32,7 +32,7 @@ class SitemapSingleProductStrategy:
         product_urls = self._get_product_urls(url, sitemap_urls)
         
         product_json_urls = [f"{prod_url}.json" for prod_url in product_urls]
-        product_json_contents = [self._fetch_json_content(json_url) for json_url in product_json_urls]
+        product_json_contents = [self._fetch_json_content(json_url).get("product") for json_url in product_json_urls]
 
         return product_json_contents
     
@@ -43,7 +43,7 @@ class SitemapSingleProductStrategy:
         pattern = rf"^https://{re.escape(base_url)}/products/.+"
 
         for sitemap_url in sitemap_urls:
-            response = self.session.get(sitemap_url)
+            response = self.session.get(sitemap_url.text)
             if response.status_code != 200:
                 print(f"Failed to fetch sitemap: {sitemap_url}")
                 continue
