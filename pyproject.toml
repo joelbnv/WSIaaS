@@ -7,12 +7,15 @@ requires-python = ">=3.12"
 dependencies = [
     "bs4>=0.0.2",
     "curl-cffi>=0.10.0",
+    "demjson3>=3.0.6",
     "ipykernel>=6.29.5",
+    "js2py>=0.74",
     "mysql-connector-python>=9.2.0",
     "numpy>=2.2.4",
     "pandas>=2.2.3",
     "polars>=1.26.0",
     "psycopg2>=2.9.10",
     "pyarrow>=19.0.1",
+    "pydantic>=2.11.5",
     "requests>=2.32.3",
 ]
