@@ -13,6 +13,10 @@ from transformer.transformer_handler import Product
 class WooCommerceProduct(BaseModel):
     pass
 
+    @staticmethod
+    def from_json(data: dict):
+        pass
+
     # Writer methods 
     @staticmethod
     def write_batch_csv(records: Iterable[Product], path: str):

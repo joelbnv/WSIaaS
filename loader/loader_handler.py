@@ -97,38 +97,38 @@ class LoaderHandler:
         elif self.destination_format == "sqlite":
 
             if self.vendor == "shopify":
-                ShopifyProduct.write_batch_sqlite(self.data, path=None)
+                ShopifyProduct.write_batch_sqlite(self.data, table="Products", conn_params=self.db_config)
             elif self.vendor == "bigcommerce":
-                BigCommerceProduct.write_batch_sqlite(self.data, path=None)
+                BigCommerceProduct.write_batch_sqlite(self.data, table="Products", conn_params=self.db_config)
             elif self.vendor == "wix":
-                WixProduct.write_batch_sqlite(self.data, path=None)
+                WixProduct.write_batch_sqlite(self.data, table="Products", conn_params=self.db_config)
             elif self.vendor == "prestashop":
-                PrestashopProduct.write_batch_sqlite(self.data, path=None)
+                PrestashopProduct.write_batch_sqlite(self.data, table="Products", conn_params=self.db_config)
             elif self.vendor == "woocommerce":
-                WooCommerceProduct.write_batch_sqlite(self.data, path=None)
+                WooCommerceProduct.write_batch_sqlite(self.data, table="Products", conn_params=self.db_config)
 
         elif self.destination_format == "mysql":
 
             if self.vendor == "shopify":
-                ShopifyProduct.write_batch_mysql(self.data, path=None)
+                ShopifyProduct.write_batch_mysql(self.data, table="Products", conn_params=self.db_config)
             elif self.vendor == "bigcommerce":
-                BigCommerceProduct.write_batch_mysql(self.data, path=None)
+                BigCommerceProduct.write_batch_mysql(self.data, table="Products", conn_params=self.db_config)
             elif self.vendor == "wix":
-                WixProduct.write_batch_mysql(self.data, path=None)
+                WixProduct.write_batch_mysql(self.data, table="Products", conn_params=self.db_config)
             elif self.vendor == "prestashop":
-                PrestashopProduct.write_batch_mysql(self.data, path=None)
+                PrestashopProduct.write_batch_mysql(self.data, table="Products", conn_params=self.db_config)
             elif self.vendor == "woocommerce":
-                WooCommerceProduct.write_batch_mysql(self.data, path=None)
+                WooCommerceProduct.write_batch_mysql(self.data, table="Products", conn_params=self.db_config)
 
         elif self.destination_format == "postgres":
 
             if self.vendor == "shopify":
-                ShopifyProduct.write_batch_postgres(self.data, path=None)
+                ShopifyProduct.write_batch_postgres(self.data, table="Products", conn_params=self.db_config)
             elif self.vendor == "bigcommerce":
-                BigCommerceProduct.write_batch_postgres(self.data, path=None)
+                BigCommerceProduct.write_batch_postgres(self.data, table="Products", conn_params=self.db_config)
             elif self.vendor == "wix":
-                WixProduct.write_batch_postgres(self.data, path=None)
+                WixProduct.write_batch_postgres(self.data, table="Products", conn_params=self.db_config)
             elif self.vendor == "prestashop":
-                PrestashopProduct.write_batch_postgres(self.data, path=None)
+                PrestashopProduct.write_batch_postgres(self.data, table="Products", conn_params=self.db_config)
             elif self.vendor == "woocommerce":
-                WooCommerceProduct.write_batch_postgres(self.data, path=None)
+                WooCommerceProduct.write_batch_postgres(self.data, table="Products", conn_params=self.db_config)
