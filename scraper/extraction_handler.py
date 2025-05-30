@@ -3,6 +3,10 @@ from scraper.strategies.shopify.sitemap_single_product_strategy import (
     SitemapSingleProductStrategy,
 )
 
+from scraper.strategies.bigcommerce.sitemap_single_product_strategy import BigCommerceSitemapSingleProductStrategy
+from scraper.strategies.wix.sitemap_single_product_strategy import WixSitemapSingleProductStrategy
+from scraper.strategies.
+
 import json
 
 
@@ -15,9 +19,13 @@ class ExtractionHandler:
         if self.vendor == "shopify":
             return [SitemapSingleProductStrategy(), ShopifyAPIStategy()]
         elif self.vendor == "prestashop":
-            return []
+            return [PrestashopSingleProductStrategy()]
         elif self.vendor == "bigcommerce":
-            return []
+            return [BigCommerceSitemapSingleProductStrategy()]
+        elif self.vendor == "wix":
+            return [WixSitemapSingleProductStrategy()]
+        elif self.vendor == "bigcommerce":
+            return [BigCommerceSitemapSingleProductStrategy()]
         else:
             raise ValueError(f"Vendor no soportado: {self.vendor}")
 
