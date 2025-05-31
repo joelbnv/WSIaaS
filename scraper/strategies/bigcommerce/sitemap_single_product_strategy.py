@@ -76,7 +76,11 @@ class BigCommerceSitemapSingleProductStrategy:
 
         # Sería pertinente guardar un diccionario con la URL del producto y los datos extraídos
 
-        return product_json_contents
+        # return product_json_contents
+        return [
+            {"url": url, "data": info}
+            for url, info in product_json_contents.items()
+        ]
     
 
 

@@ -1,13 +1,17 @@
-from scraper.strategies.shopify.api_strategy import ShopifyAPIStategy
+import logging
+from scraper.strategies.shopify.api_strategy import ShopifyAPIBulkStategy
 from scraper.strategies.shopify.sitemap_single_product_strategy import (
-    SitemapSingleProductStrategy,
+    ShopifySitemapSingleProductStrategy,
 )
 
 from scraper.strategies.bigcommerce.sitemap_single_product_strategy import BigCommerceSitemapSingleProductStrategy
 from scraper.strategies.wix.sitemap_single_product_strategy import WixSitemapSingleProductStrategy
-from scraper.strategies.
+
+from typing import Callable
 
 import json
+
+logger = logging.getLogger(__name__)
 
 
 class ExtractionHandler:
@@ -15,11 +19,11 @@ class ExtractionHandler:
         self.vendor = vendor.lower()
         self.strategy_chain = self.get_strategy_chain()
 
-    def get_strategy_chain(self) -> list[callable]:
+    def get_strategy_chain(self) -> list[Callable]:
         if self.vendor == "shopify":
-            return [SitemapSingleProductStrategy(), ShopifyAPIStategy()]
-        elif self.vendor == "prestashop":
-            return [PrestashopSingleProductStrategy()]
+            return [ShopifySitemapSingleProductStrategy(), ShopifyAPIBulkStategy()]
+        # elif self.vendor == "prestashop":
+        #     return [PrestashopSingleProductStrategy()]
         elif self.vendor == "bigcommerce":
             return [BigCommerceSitemapSingleProductStrategy()]
         elif self.vendor == "wix":
@@ -36,9 +40,11 @@ class ExtractionHandler:
             try:
                 used_strategy_name = strategy.__class__.__name__
                 print(f"Intentando estrategia: {used_strategy_name}")
+                logger.info("ExtractionHandler: Seleccionada estrategia `%s`", strategy.__class__.__name__)
                 data = strategy.extract(url)
                 if data:
                     print(f"Estrategia exitosa: {used_strategy_name}")
+                    logger.info("Estrategia exitosa: %s", used_strategy_name)
                     return data, used_strategy_name
             except Exception as e:
                 print(f"La estrategia falló: {used_strategy_name}: {str(e)}")

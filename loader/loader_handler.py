@@ -1,15 +1,17 @@
-import pandas as pd
-import csv
-import os
+from pathlib import Path
 import json
-from database.db_factory import DatabaseFactory
-from transformer.input_mappers_pydantic.bigcommerce import BigCommerceProduct
-from transformer.input_mappers_pydantic.prestashop import PrestashopProduct
-from transformer.input_mappers_pydantic.shopify import ShopifyProduct
-from transformer.input_mappers_pydantic.wix import WixProduct
-from transformer.input_mappers_pydantic.woocommerce import WooCommerceProduct
 from transformer.transformer_handler import Product
 from typing import Iterable
+
+from loader.loader_writers import (
+    write_batch_csv,
+    write_batch_excel,
+    write_batch_jsonl,
+    write_batch_parquet,
+    write_batch_mysql,
+    write_batch_sqlite,
+    write_batch_postgres,
+)
 
 
 """
@@ -20,115 +22,45 @@ within the pydantic models themselves.
 
 
 class LoaderHandler:
-    def __init__(self, data: Iterable[Product], destination_format: str, vendor: str, db_config: dict | str = None):
+    def __init__(
+        self,
+        data: Iterable[Product],
+        destination_format: str,
+        destination_path: Path,
+        vendor: str,
+        db_config: dict | str | None = None,
+        db_path: str | None = None,
+    ):
         self.data = data
         self.destination_format = destination_format
+        self.destination_path = destination_path
         self.vendor = vendor
-        self.db_config = json.loads(db_config) if isinstance(db_config, str) else db_config
+        self.db_config = (
+            json.loads(db_config) if isinstance(db_config, str) else db_config
+        )
+        self.db_path = db_path
 
     def load(self) -> None:
-
         if self.destination_format == "csv":
-
-            if self.vendor == "shopify":
-                ShopifyProduct.write_batch_csv(self.data, path=None)
-            elif self.vendor == "bigcommerce":
-               BigCommerceProduct.write_batch_csv(self.data, path=None)
-            elif self.vendor == "wix":
-                WixProduct.write_batch_csv(self.data, path=None)
-            elif self.vendor == "prestashop":
-                PrestashopProduct.write_batch_csv(self.data, path=None)
-            elif self.vendor == "woocommerce":
-                WooCommerceProduct.write_batch_csv(self.data, path=None)
-
-        elif self.destination_format == "json":
-
-            if self.vendor == "shopify":
-                ShopifyProduct.write_batch_json(self.data, path=None)
-            elif self.vendor == "bigcommerce":
-                BigCommerceProduct.write_batch_json(self.data, path=None)
-            elif self.vendor == "wix":
-                WixProduct.write_batch_json(self.data, path=None)
-            elif self.vendor == "prestashop":
-                PrestashopProduct.write_batch_json(self.data, path=None)
-            elif self.vendor == "woocommerce":
-                WooCommerceProduct.write_batch_json(self.data, path=None)
-
+            write_batch_csv(self.data, path=Path(self.destination_path))
 
         elif self.destination_format == "jsonl":
-
-            if self.vendor == "shopify":
-                ShopifyProduct.write_batch_jsonl(self.data, path=None)
-            elif self.vendor == "bigcommerce":
-                BigCommerceProduct.write_batch_jsonl(self.data, path=None)
-            elif self.vendor == "wix":
-                WixProduct.write_batch_jsonl(self.data, path=None)
-            elif self.vendor == "prestashop":
-                PrestashopProduct.write_batch_jsonl(self.data, path=None)
-            elif self.vendor == "woocommerce":
-                WooCommerceProduct.write_batch_jsonl(self.data, path=None)
+            write_batch_jsonl(self.data, path=Path(self.destination_path))
 
         elif self.destination_format == "excel":
-
-            if self.vendor == "shopify":
-                ShopifyProduct.write_batch_excel(self.data, path=None)
-            elif self.vendor == "bigcommerce":
-                BigCommerceProduct.write_batch_excel(self.data, path=None)
-            elif self.vendor == "wix":
-                WixProduct.write_batch_excel(self.data, path=None)
-            elif self.vendor == "prestashop":
-                PrestashopProduct.write_batch_excel(self.data, path=None)
-            elif self.vendor == "woocommerce":
-                WooCommerceProduct.write_batch_excel(self.data, path=None)
+            write_batch_excel(self.data, path=Path(self.destination_path))
 
         elif self.destination_format == "parquet":
-
-            if self.vendor == "shopify":
-                ShopifyProduct.write_batch_parquet(self.data, path=None)
-            elif self.vendor == "bigcommerce":
-                BigCommerceProduct.write_batch_parquet(self.data, path=None)
-            elif self.vendor == "wix":
-                WixProduct.write_batch_parquet(self.data, path=None)
-            elif self.vendor == "prestashop":
-                PrestashopProduct.write_batch_parquet(self.data, path=None)
-            elif self.vendor == "woocommerce":
-                WooCommerceProduct.write_batch_parquet(self.data, path=None)
+            write_batch_parquet(self.data, path=Path(self.destination_path))
 
         elif self.destination_format == "sqlite":
-
-            if self.vendor == "shopify":
-                ShopifyProduct.write_batch_sqlite(self.data, table="Products", conn_params=self.db_config)
-            elif self.vendor == "bigcommerce":
-                BigCommerceProduct.write_batch_sqlite(self.data, table="Products", conn_params=self.db_config)
-            elif self.vendor == "wix":
-                WixProduct.write_batch_sqlite(self.data, table="Products", conn_params=self.db_config)
-            elif self.vendor == "prestashop":
-                PrestashopProduct.write_batch_sqlite(self.data, table="Products", conn_params=self.db_config)
-            elif self.vendor == "woocommerce":
-                WooCommerceProduct.write_batch_sqlite(self.data, table="Products", conn_params=self.db_config)
+            write_batch_sqlite(self.data, table="Products", db_path=self.db_path)
 
         elif self.destination_format == "mysql":
-
-            if self.vendor == "shopify":
-                ShopifyProduct.write_batch_mysql(self.data, table="Products", conn_params=self.db_config)
-            elif self.vendor == "bigcommerce":
-                BigCommerceProduct.write_batch_mysql(self.data, table="Products", conn_params=self.db_config)
-            elif self.vendor == "wix":
-                WixProduct.write_batch_mysql(self.data, table="Products", conn_params=self.db_config)
-            elif self.vendor == "prestashop":
-                PrestashopProduct.write_batch_mysql(self.data, table="Products", conn_params=self.db_config)
-            elif self.vendor == "woocommerce":
-                WooCommerceProduct.write_batch_mysql(self.data, table="Products", conn_params=self.db_config)
+            write_batch_mysql(self.data, table="Products", conn_params=self.db_config)
 
         elif self.destination_format == "postgres":
-
             if self.vendor == "shopify":
-                ShopifyProduct.write_batch_postgres(self.data, table="Products", conn_params=self.db_config)
-            elif self.vendor == "bigcommerce":
-                BigCommerceProduct.write_batch_postgres(self.data, table="Products", conn_params=self.db_config)
-            elif self.vendor == "wix":
-                WixProduct.write_batch_postgres(self.data, table="Products", conn_params=self.db_config)
-            elif self.vendor == "prestashop":
-                PrestashopProduct.write_batch_postgres(self.data, table="Products", conn_params=self.db_config)
-            elif self.vendor == "woocommerce":
-                WooCommerceProduct.write_batch_postgres(self.data, table="Products", conn_params=self.db_config)
+                write_batch_postgres(
+                    self.data, table="Products", conn_params=self.db_config
+                )

@@ -1,3 +1,4 @@
+import logging
 import curl_cffi.requests
 import xml.etree.ElementTree as ET
 import re
@@ -5,6 +6,8 @@ from bs4 import BeautifulSoup
 import demjson3
 import json
 
+
+logger = logging.getLogger(__name__)
 
 class WixSitemapSingleProductStrategy:
     """
@@ -30,14 +33,20 @@ class WixSitemapSingleProductStrategy:
     def extract(self, url):
         base_sitemap_url = f"https://{url}/xmlsitemap.php"
 
+        logger.info("WixSitemap: Obteniendo sitemap principal: %s", base_sitemap_url)
+
         response = self.session.get(base_sitemap_url)
 
         if response.status_code != 200:
-            raise Exception(
-                f"Error al obtener información sobre el sitemap: {base_sitemap_url}"
-            )
+            logger.error("Error al obtener sitemap: %s (status %s)", base_sitemap_url, response.status_code)
+            raise Exception(f"Error al obtener sitemap: {base_sitemap_url} (status {response.status_code})")
 
-        root = ET.fromstring(response.text)
+
+        try:
+            root = ET.fromstring(response.text)
+        except ET.ParseError as e:
+            logger.error("Error parseando XML de %s: %s", base_sitemap_url, e)
+            raise Exception(f"Error parseando XML de {base_sitemap_url}: {e}")
 
         sitemap_urls: set[str] = {
             loc.text
@@ -45,6 +54,8 @@ class WixSitemapSingleProductStrategy:
             if (loc := sitemap.find("{*}loc")) is not None
             and loc.text.startswith("https://bearpaw.com/xmlsitemap.php?type=products")
         }
+
+        logger.info("WixSitemap: Encontradas %d posibles URLs de producto en sitemap", len(sitemap_urls))
 
         print(f"Número total de URLs de Sitemap asociadas a productos encontradas: {len(sitemap_urls)}")
 
@@ -55,24 +66,41 @@ class WixSitemapSingleProductStrategy:
         # product_ids: set = {self._get_product_id(product) for product in product_urls}
         product_url_id_dict: dict[str, int] = {product_url: self._get_product_id(product_url) for product_url in product_urls}
 
-        product_json_contents: dict[str, dict] = {
-            url: self.session.post(
+        # We exclude the records where no response was found
+        product_json_contents = dict()
+
+        for url, id in product_url_id_dict.items():
+            logger.info("Solicitando JSON para URL de producto: %s", url)
+            json_response = self.session.post(
                 self.API_ENDPOINT_GET_PRODUCT_ATTRIBUTES.format(id),
                 headers={"Content-Type": "application/json"},
                 data=json.dumps({"product_id": id}),
             ).json()
-            for url, id in product_url_id_dict.items()
-        }
 
-        # Deberíamos guardar otro diccionario con la equivalencia de la URL de producto 
-        # y el "product_id" correspondiente
+            # If there is a non-empty response, url and JSON object to dictionary
+            if json_response:
+                product_json_contents[url] = json_response
 
 
+        # product_json_contents: dict[str, dict] = {
+        #     url: self.session.post(
+        #         self.API_ENDPOINT_GET_PRODUCT_ATTRIBUTES.format(id),
+        #         headers={"Content-Type": "application/json"},
+        #         data=json.dumps({"product_id": id}),
+        #     ).json()
+        #     for url, id in product_url_id_dict.items()
+        # }
+
+        logger.info("Número total de ítems de producto recuperados: %d", len(product_json_contents))
         print(f"Número total de ítems de producto recuperados: {len(product_json_contents)}")
 
         # Sería pertinente guardar un diccionario con la URL del producto y los datos extraídos
 
-        return product_json_contents
+        # return product_json_contents
+        return [
+            {"url": url, "data": info}
+            for url, info in product_json_contents.items()
+        ]
     
 
 

@@ -1,9 +1,8 @@
 import curl_cffi.requests
 import xml.etree.ElementTree as ET
 import re
-import requests
 
-class SitemapSingleProductStrategy:
+class ShopifySitemapSingleProductStrategy:
 
     NAMESPACES = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
@@ -30,9 +29,15 @@ class SitemapSingleProductStrategy:
         ]
 
         product_urls = self._get_product_urls(url, sitemap_urls)
-        
         product_json_urls = [f"{prod_url}.json" for prod_url in product_urls]
-        product_json_contents = [self._fetch_json_content(json_url).get("product") for json_url in product_json_urls]
+
+        product_json_contents: list[dict] = []
+
+        for json_url in product_json_urls:
+            data = self._fetch_json_content(json_url).get("product")
+
+            if data:
+                product_json_contents.append({"url": json_url[:-5], "data": data})
 
         return product_json_contents
     

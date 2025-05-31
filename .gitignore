@@ -12,6 +12,11 @@ wheels/
 # Data Files
 *.json
 *.csv
+*.jsonl
+*.parquet
+*.sqlite
+*.xlsx
+*.xml
 
 # Notebooks
 *.ipynb
