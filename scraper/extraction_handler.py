@@ -9,8 +9,6 @@ from scraper.strategies.wix.sitemap_single_product_strategy import WixSitemapSin
 
 from typing import Callable
 
-import json
-
 
 
 class ExtractionHandler:
@@ -28,7 +26,7 @@ class ExtractionHandler:
             return [BigCommerceSitemapSingleProductStrategy()]
         elif self.vendor == "wix":
             return [WixSitemapSingleProductStrategy()]
-        elif self.vendor == "bigcommerce":
+        elif self.vendor == "woocommerce":
             return [BigCommerceSitemapSingleProductStrategy()]
         else:
             raise ValueError(f"Vendor no soportado: {self.vendor}")
@@ -43,24 +41,12 @@ class ExtractionHandler:
                 self.logger.info("ExtractionHandler: Seleccionada estrategia `%s`", strategy.__class__.__name__)
                 data = strategy.extract(url)
                 if data:
-                    print(f"Estrategia exitosa: {used_strategy_name}")
-                    self.logger.info("Estrategia exitosa: %s", used_strategy_name)
+                    self.logger.info("Estrategia exitosa: '%s'", used_strategy_name)
                     return data, used_strategy_name
             except Exception as e:
-                print(f"La estrategia falló: {used_strategy_name}: {str(e)}")
+                self.logger.error("¡La estrategia '%s' falló!", used_strategy_name)
                 last_exception = e
 
         raise Exception(
             "Todas las estrategias de extracción fallaron"
         ) from last_exception
-    
-    def dump(self, raw_data, used_strategy_name: str) -> None:
-        """Dumps (for now, Shopify API Data) into a JSON file"""
-
-        if self.vendor == "shopify" and used_strategy_name == "ShopifyAPIStrategy":
-            with open("result_files/extraction_results/result.json", "w") as file: 
-                json.dump(raw_data, file, indent=4)
-
-        if self.vendor == "shopify" and used_strategy_name == "SitemapSingleProductStrategy":
-            with open("result_files/extraction_results/result.json", "w") as file: 
-                json.dump(raw_data, file, indent=4)

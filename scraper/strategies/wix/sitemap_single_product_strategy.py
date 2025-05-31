@@ -1,3 +1,5 @@
+import html
+import itertools
 import logging
 import curl_cffi.requests
 import xml.etree.ElementTree as ET
@@ -7,7 +9,14 @@ import demjson3
 import json
 
 
-logger = logging.getLogger(__name__)
+
+
+# El extractor de Wix aún no está configurado!!!!
+# Por ahora sólamente se puede ver el código de BigCommerce (el de la clase "BigCommerceSitemapSingleProductStrategy"
+# está actualizado. Fijarse en el notebook para ver cómo se hace la extraccióm)
+
+
+
 
 class WixSitemapSingleProductStrategy:
     """
@@ -25,132 +34,126 @@ class WixSitemapSingleProductStrategy:
     que incluya un objeto de producto "Pydantic Model", como "BigCommerceProductVariant".
     """
 
-    NAMESPACES = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    NAMESPACES = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
     def __init__(self):
         self.session = curl_cffi.requests.Session(impersonate="chrome")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def extract(self, url):
-        base_sitemap_url = f"https://{url}/xmlsitemap.php"
+        base_sitemap_url = f"https://{url}/sitemap-index.xml"
 
-        logger.info("WixSitemap: Obteniendo sitemap principal: %s", base_sitemap_url)
+        self.logger.info("WixSitemap: Obteniendo sitemap principal: '%s'", base_sitemap_url)
 
         response = self.session.get(base_sitemap_url)
 
         if response.status_code != 200:
-            logger.error("Error al obtener sitemap: %s (status %s)", base_sitemap_url, response.status_code)
+            self.logger.error("Error al obtener sitemap: %s (status '%s')", base_sitemap_url, response.status_code)
             raise Exception(f"Error al obtener sitemap: {base_sitemap_url} (status {response.status_code})")
 
 
         try:
             root = ET.fromstring(response.text)
         except ET.ParseError as e:
-            logger.error("Error parseando XML de %s: %s", base_sitemap_url, e)
+            self.logger.error("Error parseando XML de %s: %s", base_sitemap_url, e)
             raise Exception(f"Error parseando XML de {base_sitemap_url}: {e}")
 
         sitemap_urls: set[str] = {
             loc.text
-            for sitemap in root.findall(".//{*}sitemap")
-            if (loc := sitemap.find("{*}loc")) is not None
-            and loc.text.startswith("https://bearpaw.com/xmlsitemap.php?type=products")
+            for loc in root.findall('.//ns:loc', self.NAMESPACES)
+            if not "Image" in loc.text 
         }
 
-        logger.info("WixSitemap: Encontradas %d posibles URLs de producto en sitemap", len(sitemap_urls))
+        self.logger.info("WixSitemap: Encontradas %d posibles URLs de producto en sitemap", len(sitemap_urls))
 
-        print(f"Número total de URLs de Sitemap asociadas a productos encontradas: {len(sitemap_urls)}")
+        product_urls = self._get_product_urls(sitemap_urls)
+        self.logger.info("Número total de URLs de producto encontradas: %s", len(product_urls))
 
-        product_urls = self._get_product_urls(url, sitemap_urls)
 
-        print(f"Número total de URLs de producto encontradas: {len(product_urls)}")
-
-        # product_ids: set = {self._get_product_id(product) for product in product_urls}
-        product_url_id_dict: dict[str, int] = {product_url: self._get_product_id(product_url) for product_url in product_urls}
+        # Para hacer pruebas, tomamos un slice de 40 enlaces
+        product_urls = list(itertools.islice(product_urls, 40))
 
         # We exclude the records where no response was found
-        product_json_contents = dict()
+        product_json_contents: list[dict] = []
 
-        for url, id in product_url_id_dict.items():
-            logger.info("Solicitando JSON para URL de producto: %s", url)
-            json_response = self.session.post(
-                self.API_ENDPOINT_GET_PRODUCT_ATTRIBUTES.format(id),
-                headers={"Content-Type": "application/json"},
-                data=json.dumps({"product_id": id}),
-            ).json()
+        for product_url in product_urls:
+            self.logger.info("Solicitando JSON para URL de producto: '%s'", product_url)
+            response = self.session.get(
+                product_url,
+                # headers={"Content-Type": "application/json"},
+            )
+
+            if response.status_code != 200:
+                self.logger.error("No se pudieron extraer los datos de la URL (%s)", product_url)
+                continue
+            
+            # Cada producto puede tener más de un Variant, y este se debe almacenar
+            data: list[dict] | dict = self._extract_products_from_source_code(response.text, product_url)
 
             # If there is a non-empty response, url and JSON object to dictionary
-            if json_response:
-                product_json_contents[url] = json_response
+            if data:
+                product_json_contents.append({"url": product_url, "data": data})
 
 
-        # product_json_contents: dict[str, dict] = {
-        #     url: self.session.post(
-        #         self.API_ENDPOINT_GET_PRODUCT_ATTRIBUTES.format(id),
-        #         headers={"Content-Type": "application/json"},
-        #         data=json.dumps({"product_id": id}),
-        #     ).json()
-        #     for url, id in product_url_id_dict.items()
-        # }
+        self.logger.info("Número total de ítems de producto recuperados: %d", len(product_json_contents))
 
-        logger.info("Número total de ítems de producto recuperados: %d", len(product_json_contents))
-        print(f"Número total de ítems de producto recuperados: {len(product_json_contents)}")
-
-        # Sería pertinente guardar un diccionario con la URL del producto y los datos extraídos
-
-        # return product_json_contents
-        return [
-            {"url": url, "data": info}
-            for url, info in product_json_contents.items()
-        ]
+        return product_json_contents
+        
     
 
+    def _extract_products_from_source_code(self, html_source_string: str, product_url: str):
+        html_doc = BeautifulSoup(html_source_string, "html.parser")
 
-    def _get_product_id(self, url: str) -> str | None:
-        html = self.session.get(url).text
-        soup = BeautifulSoup(html, "html.parser")
+        ld_json_script = html_doc.find("script", type="application/ld+json")
 
-        # Find script tags
-        script_tags = soup.find_all("script")
-
-        # Look for variable "var item" using RegEx
-        pattern = re.compile(r"var item\s*=\s*(\{.*?\})\s*;", re.DOTALL)
-
-        # We'll try to correct the "missing reference" later
-        item_data = None
-        for script in script_tags:
-            if script.string:  # skip if the script tag is empty or external
-                match = pattern.search(script.string)
-                if match:
-                    item_data = match.group(1)
-                    break
-
-        js_var_content = demjson3.decode(item_data)
-
-        # Error handling might be missing
-        parsed_product_id: str | None = js_var_content.get("ProductID")
-
-        if not parsed_product_id:
-            raise Exception("No se ha encontrado un ID de producto para el producto con enlace ...")
+        if not ld_json_script:
+            self.logger.error("No existe un objeto <script type=application/ld+json> en la URL '%s'", product_url)
+            return None
         
-        return parsed_product_id
+        unescaped_content = html.unescape(ld_json_script.text)
+
+        try:
+            ld_json_list = json.loads(unescaped_content)
+        except (json.JSONDecodeError, Exception) as e:
+            self.logger.error("Error en el parsing del formato JSON+LD a diccionario: %s", e)
+            return None
+
+        products = []
+
+        for item in ld_json_list:
+            if item.get("@type") == "Product":
+                products.append(item)
+
+        return products
+
+
+
+
 
     def _get_product_urls(self, sitemap_urls: set[str]) -> set[str]:
         product_urls = set()
 
         # There may be more than 1 page of product URLs (if there are a lot of products)
         for sitemap_url in sitemap_urls:
-            response = self.session.get(sitemap_url.text)
+            response = self.session.get(sitemap_url)
+
             if response.status_code != 200:
-                print(f"Failed to fetch sitemap: {sitemap_url}")
+                self.logger.error("Error HTTP %s navegado por el sitemap '%s'", response.status_code, sitemap_url)
                 continue
 
-            sitemap_root = ET.fromstring(response.text)
+            try:
+                root = ET.fromstring(response.text)
+            except ET.ParseError as e:
+                self.logger.error("Error parseando XML de %s: %s", sitemap_url, e)
+                raise Exception(f"Error parseando XML de {sitemap_url}: {e}")
+
             urls_in_sitemap = {
                 loc.text
-                for loc in sitemap_root.findall(".//ns:loc", namespaces=self.NAMESPACES)
-                if loc.text
+                for loc in root.findall(".//ns:loc", namespaces=self.NAMESPACES)
+                if '/en/' in loc.text
             }
 
-            product_urls.add(urls_in_sitemap)
+            product_urls.update(urls_in_sitemap)
 
         return product_urls
 

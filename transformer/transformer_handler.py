@@ -39,25 +39,29 @@ class TransformerHandler:
 
                 return product_list_flattened
 
+        elif self.vendor == "wix":
+            product_list = []
+            raw_products_flattened = list(itertools.chain(*raw_products))
+            for x in raw_products_flattened:
+                product_list.append(WixProduct.from_jsonld(x))
+            return product_list
 
         elif self.vendor == "prestashop":
             product_list = []
             for x in raw_products:
                 product_list.append(PrestashopProduct.from_jsonld(x))
             return product_list
-            # product_list = [PrestashopProduct.from_jsonld(x) for x in raw_products]
-            # return product_list
 
         elif self.vendor == "bigcommerce":
             product_list = []
             for x in raw_products:
                 product_list.append(BigCommerceProduct.from_json(x))
             return product_list
-            # product_list = [BigCommerceProduct.from_json(x) for x in raw_products]
-            # return product_list
 
         elif self.vendor == "woocommerce":
-            product_list = [WooCommerceProduct.from_json(x) for x in raw_products]
+            product_list = []
+            for x in raw_products:
+                product_list.append(WooCommerceProduct.from_json(x))
             return product_list
             
         else:

@@ -22,7 +22,7 @@ def parse_args():
     parser.add_argument(
         "--vendor",
         required=True,
-        choices=["shopify", "prestashop", "bigcommerce"],
+        choices=["shopify", "prestashop", "bigcommerce", "woocommerce", "wix"],
         help="Vendor (plataforma) a scrapear",
         type=str,
     )

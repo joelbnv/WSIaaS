@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Optional
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, ConfigDict
 
 
 class PrestashopProduct(BaseModel):
@@ -18,6 +18,9 @@ class PrestashopProduct(BaseModel):
     availability: str
     seller: str
     price_valid_until: Optional[date]
+
+
+    model_config = ConfigDict(frozen=True)
 
     @classmethod
     def from_jsonld(cls, data: dict) -> "PrestashopProduct":

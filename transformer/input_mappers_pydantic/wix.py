@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class WixProduct(BaseModel):
@@ -12,6 +12,8 @@ class WixProduct(BaseModel):
     availability: str
     price: float
     price_currency: str
+
+    model_config = ConfigDict(frozen=True)
 
     @classmethod
     def from_jsonld(cls, data: dict) -> "WixProduct":

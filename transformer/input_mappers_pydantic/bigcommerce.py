@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 
@@ -18,6 +18,8 @@ class BigCommerceProduct(BaseModel):
     stock_message: Optional[str]
     purchasable: bool
     out_of_stock_behavior: Optional[str]
+
+    model_config = ConfigDict(frozen=True)
 
     @classmethod
     def from_json(cls, data: dict) -> "Product":

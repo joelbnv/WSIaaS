@@ -76,6 +76,11 @@ def write_batch_sqlite(records: Iterable, table: str, db_path: str):
     ]
 
     with SQLiteDB(db_path) as (conn, cursor):
+
+        cursor.execute(
+            f"DROP TABLE IF EXISTS {table};"
+        )
+        
         cursor.execute(
             f"CREATE TABLE IF NOT EXISTS {table} ({', '.join(f'{f} TEXT' for f in fields)})"
         )
@@ -106,6 +111,11 @@ def write_batch_mysql(records: Iterable, table: str, conn_params: dict):
     ]
 
     with MySQLDB(conn_params) as (conn, cursor):
+
+        cursor.execute(
+            f"DROP TABLE IF EXISTS {table};"
+        )
+
         cursor.execute(
             f"CREATE TABLE IF NOT EXISTS {table} ({', '.join(f'{f} TEXT' for f in fields)})"
         )
@@ -136,6 +146,11 @@ def write_batch_postgres(records: Iterable, table: str, conn_params: dict):
     ]
 
     with PostgreSQLDB(conn_params) as (conn, cursor):
+
+        cursor.execute(
+            f"DROP TABLE IF EXISTS {table};"
+        )
+
         cursor.execute(
             f"CREATE TABLE IF NOT EXISTS {table} ({', '.join(f'{f} TEXT' for f in fields)})"
         )

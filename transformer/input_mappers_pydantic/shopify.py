@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ShopifyProductVariant(BaseModel):
@@ -20,6 +20,8 @@ class ShopifyProductVariant(BaseModel):
     image_url: Optional[str]
     created_at: datetime
     updated_at: datetime
+
+    model_config = ConfigDict(frozen=True)
 
     @classmethod
     def from_json(
