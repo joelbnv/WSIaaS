@@ -52,7 +52,10 @@ def parse_args():
         help="Tipo de base de datos",
     )
     parser.add_argument(
-        "--db-config", default=None, help="JSON con configuración de base de datos"
+        "--db-config",
+        default=None,
+        help="JSON con configuración de base de datos",
+        type=str, # Will be later loaded as a dict using json.loads()
     )
 
     parser.add_argument(
@@ -119,7 +122,9 @@ def main():
         logging.error("Ejecución abortada")
 
     print("Proceso de ETL completado. Resultados guardados en loading_results/")
-    logging.info("Proceso de ETL completado. Resultados guardados en '%s'", args.destination_path)
+    logging.info(
+        "Proceso de ETL completado. Resultados guardados en '%s'", args.destination_path
+    )
 
 
 if __name__ == "__main__":

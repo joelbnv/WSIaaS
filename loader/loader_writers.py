@@ -79,6 +79,11 @@ def write_batch_sqlite(records: Iterable, table: str, db_path: str):
         cursor.execute(
             f"CREATE TABLE IF NOT EXISTS {table} ({', '.join(f'{f} TEXT' for f in fields)})"
         )
+
+        cursor.execute(f"SELECT 1 FROM {table} LIMIT 1")
+        if cursor.fetchone():
+            cursor.execute(f"DELETE FROM {table}")
+        
         cursor.executemany(
             f"INSERT INTO {table} ({field_list}) VALUES ({placeholders})", values
         )
@@ -100,10 +105,15 @@ def write_batch_mysql(records: Iterable, table: str, conn_params: dict):
         for rec in list_records
     ]
 
-    with MySQLDB(**conn_params) as (conn, cursor):
+    with MySQLDB(conn_params) as (conn, cursor):
         cursor.execute(
             f"CREATE TABLE IF NOT EXISTS {table} ({', '.join(f'{f} TEXT' for f in fields)})"
         )
+
+        cursor.execute(f"SELECT 1 FROM {table} LIMIT 1")
+        if cursor.fetchone():
+            cursor.execute(f"TRUNCATE TABLE {table}")
+        
         cursor.executemany(
             f"INSERT INTO {table} ({field_list}) VALUES ({placeholders})", values
         )
@@ -125,10 +135,16 @@ def write_batch_postgres(records: Iterable, table: str, conn_params: dict):
         for rec in list_records
     ]
 
-    with PostgreSQLDB(**conn_params) as (conn, cursor):
+    with PostgreSQLDB(conn_params) as (conn, cursor):
         cursor.execute(
             f"CREATE TABLE IF NOT EXISTS {table} ({', '.join(f'{f} TEXT' for f in fields)})"
         )
+
+        # Comprobamos si hay datos, y ejecutamos una operación de TRUNCATE para vaciar la tabla si los hay
+        cursor.execute(f"SELECT 1 FROM {table} LIMIT 1")
+        if cursor.fetchone():
+            cursor.execute(f"TRUNCATE TABLE {table}")
+
         cursor.executemany(
             f"INSERT INTO {table} ({field_list}) VALUES ({placeholders})",
             values

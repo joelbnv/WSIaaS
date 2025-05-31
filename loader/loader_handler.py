@@ -1,3 +1,4 @@
+import ast
 from pathlib import Path
 import json
 from transformer.transformer_handler import Product
@@ -36,7 +37,9 @@ class LoaderHandler:
         self.destination_path = destination_path
         self.vendor = vendor
         self.db_config = (
-            json.loads(db_config) if isinstance(db_config, str) else db_config
+            # We'll use ast.literal_eval() to be able to import dict-like string that uses single-quote
+            ast.literal_eval(db_config) if isinstance(db_config, str) else db_config
+            # json.loads(db_config) if isinstance(db_config, str) else db_config
         )
         self.db_path = db_path
 

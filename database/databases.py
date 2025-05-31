@@ -6,12 +6,19 @@ from psycopg2 import OperationalError as PostgresError
 
 
 class MySQLDB:
-    def __init__(self, host, user, password, database, port):
+    def __init__(self, conn_params: dict):
+
+        host = conn_params.get("host", "")
+        user = conn_params.get("user", "")
+        password = conn_params.get("password", "")
+        dbname = conn_params.get("dbname", "")
+        port = int(conn_params.get("port"))
+
         self.config = {
             "host": host,
             "user": user,
             "password": password,
-            "database": database,
+            "database": dbname,
             "port": port
         }
         self.conn = None
@@ -34,12 +41,19 @@ class MySQLDB:
 
 
 class PostgreSQLDB:
-    def __init__(self, host, user, password, database, port=5432):
+    def __init__(self, conn_params: dict):
+
+        host = conn_params.get("host", "")
+        user = conn_params.get("user", "")
+        password = conn_params.get("password", "")
+        dbname = conn_params.get("dbname", "")
+        port = int(conn_params.get("port"))
+
         self.config = {
             "host": host,
             "user": user,
             "password": password,
-            "dbname": database,
+            "dbname": dbname,
             "port": port,
         }
         self.conn = None
