@@ -5,10 +5,11 @@ from scraper.extraction_handler import ExtractionHandler
 from scraper.logging_config import configure_logging
 from transformer.transformer_handler import Product, TransformerHandler
 from loader.loader_handler import LoaderHandler
-from typing import Iterable, Optional
+from typing import Iterable
 import logging
-from type_hints import Product
 
+
+logger = logging.getLogger("MAIN.PY")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Web Scraping ETL por Vendor")
@@ -117,14 +118,14 @@ def main():
             db_path=args.db_path,
         )
         loader.load()
-    except Exception as e:
-        logging.error("Error en la ejecución de la ETL: %s", e)
-        logging.error("Ejecución abortada")
 
-    print("Proceso de ETL completado. Resultados guardados en loading_results/")
-    logging.info(
-        "Proceso de ETL completado. Resultados guardados en '%s'", args.destination_path
-    )
+        logger.info(
+            "Proceso de ETL completado. Resultados guardados en '%s'", args.destination_path
+        )
+
+    except Exception as e:
+        logger.error("Error en la ejecución de la ETL: '%s'", e)
+        logger.error("Ejecución abortada")
 
 
 if __name__ == "__main__":

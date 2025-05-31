@@ -21,7 +21,7 @@ class BigCommerceProduct(BaseModel):
 
     @classmethod
     def from_json(cls, data: dict) -> "Product":
-        d = data.get("data", {})
+        d = data
 
         price_info = d.get("price", {})
         sale = price_info.get("sale_price_without_tax", {})

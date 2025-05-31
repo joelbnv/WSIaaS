@@ -41,12 +41,20 @@ class TransformerHandler:
 
 
         elif self.vendor == "prestashop":
-            product_list = [PrestashopProduct.from_jsonld(x) for x in raw_products]
+            product_list = []
+            for x in raw_products:
+                product_list.append(PrestashopProduct.from_jsonld(x))
             return product_list
+            # product_list = [PrestashopProduct.from_jsonld(x) for x in raw_products]
+            # return product_list
 
         elif self.vendor == "bigcommerce":
-            product_list = [BigCommerceProduct.from_json(x) for x in raw_products]
+            product_list = []
+            for x in raw_products:
+                product_list.append(BigCommerceProduct.from_json(x))
             return product_list
+            # product_list = [BigCommerceProduct.from_json(x) for x in raw_products]
+            # return product_list
 
         elif self.vendor == "woocommerce":
             product_list = [WooCommerceProduct.from_json(x) for x in raw_products]

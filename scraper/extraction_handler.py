@@ -11,13 +11,13 @@ from typing import Callable
 
 import json
 
-logger = logging.getLogger(__name__)
 
 
 class ExtractionHandler:
     def __init__(self, vendor: str) -> None:
         self.vendor = vendor.lower()
         self.strategy_chain = self.get_strategy_chain()
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def get_strategy_chain(self) -> list[Callable]:
         if self.vendor == "shopify":
@@ -40,11 +40,11 @@ class ExtractionHandler:
             try:
                 used_strategy_name = strategy.__class__.__name__
                 print(f"Intentando estrategia: {used_strategy_name}")
-                logger.info("ExtractionHandler: Seleccionada estrategia `%s`", strategy.__class__.__name__)
+                self.logger.info("ExtractionHandler: Seleccionada estrategia `%s`", strategy.__class__.__name__)
                 data = strategy.extract(url)
                 if data:
                     print(f"Estrategia exitosa: {used_strategy_name}")
-                    logger.info("Estrategia exitosa: %s", used_strategy_name)
+                    self.logger.info("Estrategia exitosa: %s", used_strategy_name)
                     return data, used_strategy_name
             except Exception as e:
                 print(f"La estrategia falló: {used_strategy_name}: {str(e)}")

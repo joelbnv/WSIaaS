@@ -71,7 +71,7 @@ def write_batch_sqlite(records: Iterable, table: str, db_path: str):
     placeholders = ", ".join("?" for _ in fields)
 
     values = [
-        tuple(str(v) for v in rec.model_dump(mode="python").values())
+        tuple(None if v ==  '' else str(v) for v in rec.model_dump(mode="python").values())
         for rec in list_records
     ]
 
@@ -101,7 +101,7 @@ def write_batch_mysql(records: Iterable, table: str, conn_params: dict):
     placeholders = ", ".join("%s" for _ in fields)
 
     values = [
-        tuple(str(v) for v in rec.model_dump(mode="python").values())
+        tuple(None if v ==  '' else str(v) for v in rec.model_dump(mode="python").values())
         for rec in list_records
     ]
 
@@ -131,7 +131,7 @@ def write_batch_postgres(records: Iterable, table: str, conn_params: dict):
     placeholders = ", ".join("%s" for _ in fields)
 
     values = [
-        tuple(str(v) for v in rec.model_dump(mode="python").values())
+        tuple(None if v ==  '' else str(v) for v in rec.model_dump(mode="python").values())
         for rec in list_records
     ]
 

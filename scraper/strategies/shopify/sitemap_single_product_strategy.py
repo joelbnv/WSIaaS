@@ -1,13 +1,17 @@
 import curl_cffi.requests
 import xml.etree.ElementTree as ET
 import re
+import logging
+
+
 
 class ShopifySitemapSingleProductStrategy:
 
-    NAMESPACES = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    NAMESPACES = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
     def __init__(self):
         self.session = curl_cffi.requests.Session(impersonate="chrome")
+        self.logger = logging.getLogger(self.__class__.__name__)
 
 
     def extract(self, url):
@@ -17,18 +21,20 @@ class ShopifySitemapSingleProductStrategy:
         response = self.session.get(base_sitemap_url)
 
         if response.status_code != 200:
-            raise Exception(f"Error al obtener información sobre el sitemap: {base_sitemap_url}")
+            self.logger.error("Error al obtener información sobre el sitemap: %s. Abortando extracción", base_sitemap_url)
+            raise Exception(f"Error al obtener información sobre el sitemap: {base_sitemap_url}. Abortando extracción")
         
         
         root = ET.fromstring(response.text)
         
         sitemap_urls = [
-            sitemap.find("sm:loc", self.NAMESPACES)
-            for sitemap in root.findall("sm:sitemap", self.NAMESPACES)
-            if re.match(rf"^https://{re.escape(url)}/sitemap_products.*\.xml.*", sitemap.find('sm:loc', self.NAMESPACES).text)
+            sitemap.find("ns:loc", self.NAMESPACES)
+            for sitemap in root.findall("ns:sitemap", self.NAMESPACES)
+            if re.match(rf"^https://{re.escape(url)}/sitemap_products.*\.xml.*", sitemap.find('ns:loc', self.NAMESPACES).text)
         ]
 
         product_urls = self._get_product_urls(url, sitemap_urls)
+        self.logger.info("Se han obtenido %d URLs de producto", len(product_urls))
         product_json_urls = [f"{prod_url}.json" for prod_url in product_urls]
 
         product_json_contents: list[dict] = []
@@ -39,6 +45,7 @@ class ShopifySitemapSingleProductStrategy:
             if data:
                 product_json_contents.append({"url": json_url[:-5], "data": data})
 
+        self.logger.info("Se han obtenido datos de un total de %d productos", len(product_json_contents))
         return product_json_contents
     
 
@@ -55,9 +62,9 @@ class ShopifySitemapSingleProductStrategy:
 
             sitemap_root = ET.fromstring(response.text)
             urls_in_sitemap = [
-                url_tag.find('sm:loc', self.NAMESPACES).text
-                for url_tag in sitemap_root.findall('sm:url', self.NAMESPACES)
-                if re.match(pattern, url_tag.find('sm:loc', self.NAMESPACES).text)
+                url_tag.find('ns:loc', self.NAMESPACES).text
+                for url_tag in sitemap_root.findall('ns:url', self.NAMESPACES)
+                if re.match(pattern, url_tag.find('ns:loc', self.NAMESPACES).text)
             ]
 
             product_urls.extend(urls_in_sitemap)

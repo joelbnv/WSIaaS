@@ -40,7 +40,7 @@ class PrestashopProduct(BaseModel):
             main_image=main_image,
             availability=offers.get("availability", "").split("/")[
                 -1
-            ],  # e.g. "InStock"
+            ],  # "InStock", etc
             seller=offers.get("seller", {}).get("name", ""),
             price_valid_until=offers.get("priceValidUntil", None),
         )
