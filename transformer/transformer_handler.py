@@ -1,7 +1,5 @@
-import pandas as pd
-import json
 
-from typing import Any, Union, Iterable, Optional, Dict
+from typing import Any, Union, Iterable, Dict
 
 import itertools
 
@@ -59,9 +57,24 @@ class TransformerHandler:
             return product_list
 
         elif self.vendor == "woocommerce":
+            # Cada producto debe ir asociado en un diccionario a una estrategia de extracción,
+            # por lo que construir (y devolver un diccionario con cada producto y su estrategia de extracción,
+            # para así hacer el mapping adecuado con los modelos de Pydantic)
+            # Ejemplo: {"url_de_producto": "from_ld_json", "url_de_producto_2": "from_pysoptions_var"}
+
             product_list = []
-            for x in raw_products:
-                product_list.append(WooCommerceProduct.from_json(x))
+
+            # Cada producto (item) es un diccionario con una lista 
+            for item in raw_products:
+
+                extraction_strategy_used = item.get("extraction_strategy_used")
+                data = item.get("data")
+
+                if extraction_strategy_used == "from_ld_json":
+                    product_list.append(WooCommerceProduct.from_jsonld(data))
+                elif extraction_strategy_used == "from_pysoptions_var":
+                    product_list.append(WooCommerceProduct.from_pysoptions_var(data))
+
             return product_list
             
         else:

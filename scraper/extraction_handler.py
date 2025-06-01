@@ -9,6 +9,8 @@ from scraper.strategies.wix.sitemap_single_product_strategy import WixSitemapSin
 
 from typing import Callable
 
+from scraper.strategies.woocommerce.sitemap_single_product_strategy import WooCommerceSitemapSingleProductStrategy
+
 
 
 class ExtractionHandler:
@@ -27,7 +29,7 @@ class ExtractionHandler:
         elif self.vendor == "wix":
             return [WixSitemapSingleProductStrategy()]
         elif self.vendor == "woocommerce":
-            return [BigCommerceSitemapSingleProductStrategy()]
+            return [WooCommerceSitemapSingleProductStrategy()]
         else:
             raise ValueError(f"Vendor no soportado: {self.vendor}")
 
@@ -37,8 +39,7 @@ class ExtractionHandler:
         for strategy in self.strategy_chain:
             try:
                 used_strategy_name = strategy.__class__.__name__
-                print(f"Intentando estrategia: {used_strategy_name}")
-                self.logger.info("ExtractionHandler: Seleccionada estrategia `%s`", strategy.__class__.__name__)
+                self.logger.info("Seleccionada estrategia `%s`", strategy.__class__.__name__)
                 data = strategy.extract(url)
                 if data:
                     self.logger.info("Estrategia exitosa: '%s'", used_strategy_name)

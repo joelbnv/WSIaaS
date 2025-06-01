@@ -102,12 +102,17 @@ def main():
         transformer = TransformerHandler(args.vendor, used_strategy_name)
 
         # Transform to list of raw_data
-        raw_data = [item.get("data") for item in raw_products]
+        # raw_data = [item.get("data") for item in raw_products]
+
+        # iterable_pydantic_models: Iterable[Product] = transformer.transform(
+        #     raw_products=raw_data
+        # )
 
         iterable_pydantic_models: Iterable[Product] = transformer.transform(
-            raw_products=raw_data
+            raw_products=raw_products
         )
-        transformer.write_to_file()
+
+        # transformer.write_to_file()
 
         loader = LoaderHandler(
             vendor=args.vendor,

@@ -64,7 +64,7 @@ class WixSitemapSingleProductStrategy:
             if not "Image" in loc.text 
         }
 
-        self.logger.info("WixSitemap: Encontradas %d posibles URLs de producto en sitemap", len(sitemap_urls))
+        self.logger.info("WixSitemap: Encontradas %d posibles URLs de Sitemap de Producto", len(sitemap_urls))
 
         product_urls = self._get_product_urls(sitemap_urls)
         self.logger.info("Número total de URLs de producto encontradas: %s", len(product_urls))
