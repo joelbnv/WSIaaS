@@ -120,7 +120,7 @@ class WooCommerceSitemapSingleProductStrategy:
             return json_dict, "from_ld_json"
 
 
-        # List of strategies to get the id
+        # List of strategies
         strategies = [from_ld_json, from_pysoptions_var]
 
         for strategy in strategies:

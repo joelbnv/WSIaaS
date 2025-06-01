@@ -39,16 +39,26 @@ class TransformerHandler:
 
         elif self.vendor == "wix":
             product_list = []
-            raw_products_flattened = list(itertools.chain(*raw_products))
-            for x in raw_products_flattened:
-                product_list.append(WixProduct.from_jsonld(x))
+
+            for item in raw_products:
+                
+                extraction_strategy_used = item.get("extraction_strategy_used")
+                # Create a flat list, as there may be more than 1 variant parsed a single product, and 
+                # they should be processed as differnt products
+                product_data_list: list = item.get("data")
+                raw_products_flattened = list(itertools.chain(*[product_data_list]))
+            
+                for x in raw_products_flattened:
+                    if extraction_strategy_used == "from_jsonld":
+                        product_list.append(WixProduct.from_jsonld(x))
+            
             return product_list
 
-        elif self.vendor == "prestashop":
-            product_list = []
-            for x in raw_products:
-                product_list.append(PrestashopProduct.from_jsonld(x))
-            return product_list
+        # elif self.vendor == "prestashop":
+        #     product_list = []
+        #     for x in raw_products:
+        #         product_list.append(PrestashopProduct.from_jsonld(x))
+        #     return product_list
 
         elif self.vendor == "bigcommerce":
             product_list = []

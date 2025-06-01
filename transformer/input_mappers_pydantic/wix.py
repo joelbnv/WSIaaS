@@ -21,7 +21,7 @@ class WixProduct(BaseModel):
             asset_type=data.get("@type", ""),
             sku=data.get("sku", ""),
             product_name=data.get("name", ""),
-            image_url=data.get("image", ""),
+            image_url=data.get("image", "")[0],
             product_description=data.get("description", ""),
             gtin13=data.get("gtin13", ""),
             brand_name=data.get("brand", {}).get("name", ""),
