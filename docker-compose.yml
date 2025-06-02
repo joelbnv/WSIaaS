@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  app:
+    image: python:3.12-slim-bookworm
+    command: >
+      sh -c "pip install --upgrade uv && uv pip install -r requirements.txt &&
+             python -m scraper.main $${ARGS}"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - .:/code
+    working_dir: /code
+    depends_on: [mysql, postgres]
+    # Pasamos args via 'docker compose run -e ARGS="--url ..."'.
+
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: etl
+    ports: ["3306:3306"]
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: etl
+    ports: ["5432:5432"]
+
+  tinyproxy:
+    image: vimagick/tinyproxy:latest
+    restart: unless-stopped
+    environment:
+      - LISTEN_PORT=8888
+      - ALLOWED=0.0.0.0/0
+      - CONNECT_PORTS=80,443
+    ports:
+      - "8888:8888"
