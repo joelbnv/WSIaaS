@@ -26,11 +26,6 @@ def parse_args():
         help="Vendor (plataforma) a scrapear",
         type=str,
     )
-    parser.add_argument(
-        "--output",
-        default="extraction_results/result.json",
-        help="Archivo de salida JSON",
-    )
 
     parser.add_argument(
         "--destination-path",
