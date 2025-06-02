@@ -5,6 +5,9 @@ import curl_cffi.requests
 import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 import json
+import os
+
+proxy_host = os.getenv("PROXY_HOST", "localhost")
 
 
 
@@ -30,8 +33,8 @@ class WixSitemapSingleProductStrategy:
         self.session = curl_cffi.requests.Session(
             impersonate="chrome", 
             proxies={
-                "http":  "http://localhost:8888",
-                "https": "http://localhost:8888",
+                "http":  f"http://{proxy_host}:8888",
+                "https": f"http://{proxy_host}:8888",
             }
         )
         self.logger = logging.getLogger(self.__class__.__name__)

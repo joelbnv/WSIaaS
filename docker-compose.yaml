@@ -4,12 +4,13 @@ services:
     command: ["--help"]
     environment:
       - PYTHONUNBUFFERED=1
+      - PROXY_HOST=tinyproxy
     volumes:
       - .:/code # Código
       - ./result_files:/code/result_files # Persistencia para archivos
       - ./sqlite_dbs:/code/sqlite_dbs # Persistencia para SQLite
     working_dir: /code
-    depends_on: [mysql, postgres]
+    depends_on: [mysql, postgres, tinyproxy]
 
   mysql:
     image: mysql:8
