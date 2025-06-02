@@ -1,25 +1,25 @@
-version: "3.9"
-
 services:
   app:
-    image: python:3.12-slim-bookworm
-    command: >
-      sh -c "pip install --upgrade uv && uv pip install -r requirements.txt &&
-             python -m scraper.main $${ARGS}"
+    build: .
+    command: ["--help"]
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
-      - .:/code
+      - .:/code # Código
+      - ./result_files:/code/result_files # Persistencia para archivos
+      - ./sqlite_dbs:/code/sqlite_dbs # Persistencia para SQLite
     working_dir: /code
     depends_on: [mysql, postgres]
-    # Pasamos args via 'docker compose run -e ARGS="--url ..."'.
 
   mysql:
     image: mysql:8
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: etl
-    ports: ["3306:3306"]
+    ports: 
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
 
   postgres:
     image: postgres:17
@@ -27,7 +27,10 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
       POSTGRES_DB: etl
-    ports: ["5432:5432"]
+    ports: 
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   tinyproxy:
     image: vimagick/tinyproxy:latest
@@ -38,3 +41,8 @@ services:
       - CONNECT_PORTS=80,443
     ports:
       - "8888:8888"
+
+# Volúmenes nombrados que persisten fuera del contenedor
+volumes:
+  mysql_data:
+  postgres_data:
