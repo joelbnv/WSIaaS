@@ -1,6 +1,5 @@
 import ast
 from pathlib import Path
-import json
 from transformer.transformer_handler import Product
 from typing import Iterable
 
@@ -13,13 +12,6 @@ from loader.loader_writers import (
     write_batch_sqlite,
     write_batch_postgres,
 )
-
-
-"""
-"data" should be a list of validated pydantic models, and it should not involve pandas at all.
-The logic for dealing with iterables of pydantic models and writing them in batches is defined
-within the pydantic models themselves. 
-"""
 
 
 class LoaderHandler:
@@ -63,7 +55,4 @@ class LoaderHandler:
             write_batch_mysql(self.data, table="Products", conn_params=self.db_config)
 
         elif self.destination_format == "postgres":
-            if self.vendor == "shopify":
-                write_batch_postgres(
-                    self.data, table="Products", conn_params=self.db_config
-                )
+            write_batch_postgres(self.data, table="Products", conn_params=self.db_config)

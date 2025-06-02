@@ -6,7 +6,6 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from database.databases import MySQLDB, PostgreSQLDB, SQLiteDB
-from datetime import date, datetime
 
 
 def write_batch_csv(records: Iterable, path: str):
