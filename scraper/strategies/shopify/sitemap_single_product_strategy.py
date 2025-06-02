@@ -10,7 +10,13 @@ class ShopifySitemapSingleProductStrategy:
     NAMESPACES = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
     def __init__(self):
-        self.session = curl_cffi.requests.Session(impersonate="chrome")
+        self.session = curl_cffi.requests.Session(
+            impersonate="chrome", 
+            proxies={
+                "http":  "http://localhost:8888",
+                "https": "http://localhost:8888",
+            }
+        )
         self.logger = logging.getLogger(self.__class__.__name__)
 
 
@@ -21,17 +27,32 @@ class ShopifySitemapSingleProductStrategy:
         response = self.session.get(base_sitemap_url)
 
         if response.status_code != 200:
-            self.logger.error("Error al obtener información sobre el sitemap: %s. Abortando extracción", base_sitemap_url)
-            raise Exception(f"Error al obtener información sobre el sitemap: {base_sitemap_url}. Abortando extracción")
+            self.logger.error(
+                "Error al obtener información sobre el sitemap: '%s' (Error %d). Abortando extracción",
+                base_sitemap_url,
+                response.status_code
+            )
+            raise Exception(
+                f"Error al obtener información sobre el sitemap: {base_sitemap_url} (Error {response.status_code}). Abortando extracción"
+            )
         
         
-        root = ET.fromstring(response.text)
-        
-        sitemap_urls = [
-            sitemap.find("ns:loc", self.NAMESPACES)
-            for sitemap in root.findall("ns:sitemap", self.NAMESPACES)
-            if re.match(rf"^https://{re.escape(url)}/sitemap_products.*\.xml.*", sitemap.find('ns:loc', self.NAMESPACES).text)
-        ]
+        try:
+            root = ET.fromstring(response.text)
+        except ET.ParseError as e:
+            self.logger.error("Error parseando XML de %s. (Error: %s). Abortando extracción", base_sitemap_url, e)
+            raise Exception(f"Error parseando XML de {base_sitemap_url}. (Error: {e}) Abortando extracción")
+
+
+        sitemap_urls = []
+
+        for sitemap in root.findall("ns:sitemap", self.NAMESPACES):
+            loc_element = sitemap.find("ns:loc", self.NAMESPACES)
+            if loc_element is not None:
+                loc_text = loc_element.text
+                if re.match(rf"^https://{re.escape(url)}/sitemap_products.*\.xml.*", loc_text):
+                    sitemap_urls.append(loc_element)
+
 
         product_urls = self._get_product_urls(url, sitemap_urls)
         self.logger.info("Se han obtenido %d URLs de producto", len(product_urls))
@@ -39,15 +60,59 @@ class ShopifySitemapSingleProductStrategy:
 
         product_json_contents: list[dict] = []
 
-        for json_url in product_json_urls:
-            data = self._fetch_json_content(json_url).get("product")
+        for product_url in product_json_urls:
+            data, extraction_strategy_used = self._extract_product_info(product_url)
 
             if data:
-                product_json_contents.append({"url": json_url[:-5], "data": data})
+                product_json_contents.append({
+                    "url": product_url[:-5], 
+                    "data": data, 
+                    "extraction_strategy_used": extraction_strategy_used
+                })
 
         self.logger.info("Se han obtenido datos de un total de %d productos", len(product_json_contents))
         return product_json_contents
     
+
+    def _extract_product_info(self, url):
+
+        def from_json_product_endpoint():
+            response = self.session.get(url)
+
+            if response.status_code != 200:
+                self.logger.error("No se han podido obtener datos JSON de la URL '%s'. (Error: %d)", url, response.status_code)
+                return None, "from_json_product_endpoint"
+            
+            json_response = [response.json().get("product")]
+
+            products = []
+
+            for item in json_response:
+                products.append(item)
+
+            return products, "from_json_product_endpoint"
+
+
+    
+        strategies = [from_json_product_endpoint]
+
+        for strategy in strategies:
+            self.logger.info(
+                "[%s]. Para extraer los datos de Producto, se está utilizando la estrategia: '%s'",
+                self.__class__.__name__,
+                strategy.__name__,
+            )
+
+            try:
+                data, extraction_strategy_used = strategy()
+                if isinstance(data, (dict, list)):
+                    return data, extraction_strategy_used
+            except Exception as e:
+                self.logger.error("Falló la estrategia '%s' en obtener datos de Producto. Error: '%s'", strategy.__name__, e)
+                continue
+        
+        # Si falla, no devolver datos
+        return None, ""
 
 
     def _get_product_urls(self, base_url, sitemap_urls):

@@ -11,7 +11,13 @@ class WooCommerceSitemapSingleProductStrategy:
     NAMESPACES = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
     def __init__(self):
-        self.session = curl_cffi.requests.Session(impersonate="chrome")
+        self.session = curl_cffi.requests.Session(
+            impersonate="chrome", 
+            proxies={
+                "http":  "http://localhost:8888",
+                "https": "http://localhost:8888",
+            }
+        )
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def extract(self, url):

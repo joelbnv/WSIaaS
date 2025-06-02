@@ -27,8 +27,14 @@ class TransformerHandler:
             elif self.used_extraction_strategy == "ShopifySitemapSingleProductStrategy":
                 product_list = []
 
-                for x in raw_products:
-                    product_list.append(ShopifyProduct.from_json(x))
+                for item in raw_products:
+                    extraction_strategy_used = item.get("extraction_strategy_used")
+                    data = item.get("data")
+                    
+                    for single_product in data:
+                        if extraction_strategy_used == "from_json_product_endpoint":
+                            product_list.append(ShopifyProduct.from_json(single_product))
+
 
                 # We need to flatten the list, as many products have variants (that are captured as a list
                 # of different products, and thus each "variant" is its own product), and they should be
@@ -41,7 +47,7 @@ class TransformerHandler:
             product_list = []
 
             for item in raw_products:
-                
+
                 extraction_strategy_used = item.get("extraction_strategy_used")
                 # Create a flat list, as there may be more than 1 variant parsed a single product, and 
                 # they should be processed as differnt products
@@ -62,9 +68,18 @@ class TransformerHandler:
 
         elif self.vendor == "bigcommerce":
             product_list = []
-            for x in raw_products:
-                product_list.append(BigCommerceProduct.from_json(x))
+
+            for item in raw_products:
+                extraction_strategy_used = item.get("extraction_strategy_used")
+                data: dict = item.get("data")
+
+                for single_product in data:
+                    single_product_data = single_product.get("data")
+                    if extraction_strategy_used == "from_hidden_api_post_request":
+                        product_list.append(BigCommerceProduct.from_json(single_product_data))
+
             return product_list
+
 
         elif self.vendor == "woocommerce":
             # Cada producto debe ir asociado en un diccionario a una estrategia de extracción,

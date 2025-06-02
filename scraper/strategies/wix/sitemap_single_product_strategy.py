@@ -3,18 +3,8 @@ import itertools
 import logging
 import curl_cffi.requests
 import xml.etree.ElementTree as ET
-import re
 from bs4 import BeautifulSoup
-import demjson3
 import json
-
-
-
-
-# El extractor de Wix aún no está configurado!!!!
-# Por ahora sólamente se puede ver el código de BigCommerce (el de la clase "BigCommerceSitemapSingleProductStrategy"
-# está actualizado. Fijarse en el notebook para ver cómo se hace la extraccióm)
-
 
 
 
@@ -37,7 +27,13 @@ class WixSitemapSingleProductStrategy:
     NAMESPACES = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
     def __init__(self):
-        self.session = curl_cffi.requests.Session(impersonate="chrome")
+        self.session = curl_cffi.requests.Session(
+            impersonate="chrome", 
+            proxies={
+                "http":  "http://localhost:8888",
+                "https": "http://localhost:8888",
+            }
+        )
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def extract(self, url):
@@ -64,15 +60,20 @@ class WixSitemapSingleProductStrategy:
         response = self.session.get(base_sitemap_url)
 
         if response.status_code != 200:
-            self.logger.error("Error al obtener sitemap: %s (status '%s')", base_sitemap_url, response.status_code)
-            raise Exception(f"Error al obtener sitemap: {base_sitemap_url} (status {response.status_code})")
-
+            self.logger.error(
+                "Error al obtener información sobre el sitemap: '%s' (Error %d). Abortando extracción",
+                base_sitemap_url,
+                response.status_code
+            )
+            raise Exception(
+                f"Error al obtener información sobre el sitemap: {base_sitemap_url} (Error {response.status_code}). Abortando extracción"
+            )
 
         try:
             root = ET.fromstring(response.text)
         except ET.ParseError as e:
-            self.logger.error("Error parseando XML de %s: %s", base_sitemap_url, e)
-            raise Exception(f"Error parseando XML de {base_sitemap_url}: {e}")
+            self.logger.error("Error parseando XML de %s. (Error: %s). Abortando extracción", base_sitemap_url, e)
+            raise Exception(f"Error parseando XML de {base_sitemap_url}. (Error: {e}) Abortando extracción")
 
         sitemap_urls: set[str] = {
             loc.text
@@ -98,7 +99,7 @@ class WixSitemapSingleProductStrategy:
             response = self.session.get(product_url)
 
             if response.status_code != 200:
-                self.logger.error("No se pudieron extraer los datos de la URL (%s)", product_url)
+                self.logger.error("No se pudieron extraer los datos de la URL (%s). Error %d", product_url, response.status_code)
                 continue
             
             # Cada producto puede tener más de un Variant, y este se debe almacenar

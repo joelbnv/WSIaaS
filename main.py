@@ -96,17 +96,7 @@ def main():
         handler = ExtractionHandler(vendor=args.vendor)
         raw_products, used_strategy_name = handler.extract(args.url)
 
-        # Write extraction to JSON file (only valid for Shopify API Endpoint Extractor, for now)
-        # handler.dump(raw_products, used_strategy_name)
-
         transformer = TransformerHandler(args.vendor, used_strategy_name)
-
-        # Transform to list of raw_data
-        # raw_data = [item.get("data") for item in raw_products]
-
-        # iterable_pydantic_models: Iterable[Product] = transformer.transform(
-        #     raw_products=raw_data
-        # )
 
         iterable_pydantic_models: Iterable[Product] = transformer.transform(
             raw_products=raw_products

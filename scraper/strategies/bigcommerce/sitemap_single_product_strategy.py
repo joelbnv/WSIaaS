@@ -32,24 +32,37 @@ class BigCommerceSitemapSingleProductStrategy:
     )
 
     def __init__(self):
-        self.session = curl_cffi.requests.Session(impersonate="chrome")
+        self.session = curl_cffi.requests.Session(
+            impersonate="chrome", 
+            proxies={
+                "http":  "http://localhost:8888",
+                "https": "http://localhost:8888",
+            }
+        )
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def extract(self, url):
         base_sitemap_url = f"https://{url}/xmlsitemap.php"
+        self.logger.info("BigCommerceSitemap: Obteniendo sitemap principal: '%s'", base_sitemap_url)
 
         response = self.session.get(base_sitemap_url)
 
         if response.status_code != 200:
             self.logger.error(
-                "Error al obtener información sobre el sitemap: %s. Abortando extracción",
+                "Error al obtener información sobre el sitemap: '%s' (Error %d). Abortando extracción",
                 base_sitemap_url,
+                response.status_code
             )
             raise Exception(
-                f"Error al obtener información sobre el sitemap: {base_sitemap_url}. Abortando extracción"
+                f"Error al obtener información sobre el sitemap: {base_sitemap_url} (Error {response.status_code}). Abortando extracción"
             )
 
-        root = ET.fromstring(response.text)
+        try:
+            root = ET.fromstring(response.text)
+        except ET.ParseError as e:
+            self.logger.error("Error parseando XML de %s. (Error: %s). Abortando extracción", base_sitemap_url, e)
+            raise Exception(f"Error parseando XML de {base_sitemap_url}. (Error: {e}) Abortando extracción")
+
 
         sitemap_urls = set()
 
@@ -63,13 +76,12 @@ class BigCommerceSitemapSingleProductStrategy:
             if loc is not None and loc.text and pattern.match(loc.text):
                 sitemap_urls.add(loc.text)
 
-        print(
-            f"Número total de URLs de Sitemap asociadas a productos encontradas: {len(sitemap_urls)}"
-        )
+
+
+        self.logger.info("WixSitemap: Encontradas %d posibles URLs de Sitemap de Producto", len(sitemap_urls))
 
         product_urls = self._get_product_urls(sitemap_urls)
         self.logger.info("Se han obtenido %d URLs de producto", len(product_urls))
-        # print(f"Número total de URLs de producto encontradas: {len(product_urls)}")
 
         # Para hacer pruebas, nos quedamos solamente con las primeras 10 URLs
         product_urls = list(itertools.islice(product_urls, 10))
@@ -80,9 +92,11 @@ class BigCommerceSitemapSingleProductStrategy:
             for product_url in product_urls
         }
 
+        # We exclude the records where no response was found
         product_json_contents: list[dict] = []
 
         for product_url, id in product_url_id_dict.items():
+            self.logger.info("Solicitando JSON para URL de producto: '%s'", product_url)
             response = self.session.post(
                 self.API_ENDPOINT_GET_PRODUCT_ATTRIBUTES.format(url, id),
                 headers={"Content-Type": "application/json"},
@@ -98,10 +112,15 @@ class BigCommerceSitemapSingleProductStrategy:
                 )
                 continue
 
-            data = response.json()
+            # data = response.json()
+            data, extraction_strategy_used = self._extract_product_info(response=response)
 
             if data:
-                product_json_contents.append({"url": product_url, "data": data})
+                product_json_contents.append({
+                    "url": product_url, 
+                    "data": data, 
+                    "extraction_strategy_used": extraction_strategy_used
+                })
 
         self.logger.info(
             "Se han obtenido datos de un total de %d productos",
@@ -109,6 +128,48 @@ class BigCommerceSitemapSingleProductStrategy:
         )
 
         return product_json_contents
+
+
+    def _extract_product_info(self, response: curl_cffi.requests.Response | None = None):
+        
+        def from_hidden_api_post_request():
+            if isinstance(response, curl_cffi.requests.Response):
+                json_response = [response.json()]
+
+                products = []
+                
+                for item in json_response:
+                    products.append(item)
+
+
+                return products, "from_hidden_api_post_request"
+            
+            # Si falla, no devolver datos
+            return None, ""
+        
+
+        
+        strategies = [from_hidden_api_post_request]
+
+        for strategy in strategies:
+            self.logger.info(
+                "[%s]. Para extraer los datos de Producto, se está utilizando la estrategia: '%s'",
+                self.__class__.__name__,
+                strategy.__name__,
+            )
+
+            try:
+                data, extraction_strategy_used = strategy()
+                if isinstance(data, (dict, list)):
+                    return data, extraction_strategy_used
+            except Exception as e:
+                self.logger.error("Falló la estrategia '%s' en obtener datos de Producto. Error: '%s'", strategy.__name__, e)
+                continue
+        
+        # Si falla, no devolver datos
+        return None, ""
+
+
 
     def _get_product_id(self, url: str) -> str | None:
         html = self.session.get(url).text
