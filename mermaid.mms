@@ -83,9 +83,10 @@ class LoaderHandler {
 
 %% === Relationships ===
 ExtractionHandler *-- ProductStrategy : uses
-TransformerHandler "1" o-- "n" PydanticValidatedProduct : transforms →
+LoaderHandler "1" o-- "n" PydanticValidatedProduct : transforms →
 
 
 ExtractionHandler --> TransformerHandler : error →
 TransformerHandler --> LoaderHandler : error →
+TransformerHandler --> PydanticValidatedProduct
 
